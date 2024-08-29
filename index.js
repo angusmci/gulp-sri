@@ -6,7 +6,8 @@ var crypto = require('crypto'),
 	through = require('through'),
 	assign = require('object-assign'),
 	defaults = require('lodash.defaults'),
-	gutil = require('gulp-util'),
+	PluginError = require('plugin-error'),
+	Vinyl = require('vinyl'),
 	Promise = require('bluebird'),
 	DEFAULT_OPTIONS = {
 		fileName: 'sri.json',
@@ -22,7 +23,7 @@ var crypto = require('crypto'),
 	hashesStore = {}; // options.fileName: { relativePath: hash }
 
 function error(msg) {
-	return new gutil.PluginError('gulp-sri', msg);
+	return new PluginError('gulp-sri', msg);
 }
 
 function hash(file, options) {
@@ -86,16 +87,15 @@ module.exports = exports = function(options) {
 		}).then(function(formatted) {
 			if (typeof formatted !== 'string') throw error('Return/fulfill value of `options.formatter` must be a string');
 
-			this.emit('data', new gutil.File({
+			this.emit('data', new Vinyl({
 				path: path.join(process.cwd(), options.fileName),
-				contents: new Buffer(formatted),
+				contents: Buffer.from(formatted),
 			}));
 			this.emit('end');
 		}).catch(function(err) {
-			this.emit('error', err instanceof gutil.PluginError ? err : error(err));
+			this.emit('error', err instanceof PluginError ? err : error(err));
 		});
 	}
-
 	return through(hashFile, endStream);
 };
 
